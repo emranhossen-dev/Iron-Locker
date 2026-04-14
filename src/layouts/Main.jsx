@@ -1,16 +1,15 @@
 import React from "react";
 import { Outlet } from "react-router";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 
 const Main = () => {
   return (
-    <div className="bg-[#020617] min-h-screen flex flex-col">
+    <div className="bg-[#020617] min-h-screen">
       <Navbar />
-      <div className="flex-grow">
+      {/* No flex-col here to prevent weird stretching, just normal flow */}
+      <main>
         <Outlet />
-      </div>
-      <Footer />
+      </main>
     </div>
   );
 };

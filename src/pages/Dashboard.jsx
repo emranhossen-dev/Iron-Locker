@@ -1,78 +1,65 @@
-import React from "react";
-import { useAuth } from "../context/AuthContext";
-import { Navigate } from "react-router";
-import { signOut } from "firebase/auth";
-import auth from "../firebase.init";
+import React, { useState } from "react";
 
 const Dashboard = () => {
-  const { user, loading } = useAuth();
-
-  if (loading) return <div className="h-screen bg-[#020617] flex items-center justify-center font-bold text-white">Loading Vault...</div>;
-  if (!user) return <Navigate to="/" />;
+  const [files] = useState([]); // Empty to trigger No Files UI
 
   return (
-    <div className="flex min-h-screen bg-[#020617] text-white">
-      {/* Sidebar: Only shows on large screens */}
-      <aside className="hidden lg:flex w-72 border-r border-white/5 p-8 flex-col sticky top-0 h-screen">
-        <div className="flex-grow">
-          <h2 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-10">Menu</h2>
-          <nav className="space-y-4">
-            <button className="text-indigo-400 font-medium block">Overview</button>
-            <button className="text-slate-500 hover:text-white block transition-colors">My Documents</button>
-            <button className="text-slate-500 hover:text-white block transition-colors">Settings</button>
-          </nav>
+    <div className="screen-height-minus-nav flex bg-[#020617] p-6 gap-6 overflow-hidden">
+      
+      {/* SIDEBAR */}
+      <aside className="w-64 flex flex-col h-full shrink-0">
+        <button className="btn btn-primary w-full h-14 rounded-2xl shadow-xl shadow-indigo-600/20 mb-10 font-bold text-lg">
+          + New Upload
+        </button>
+        
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-4 mb-4">Vault Categories</p>
+          <div className="space-y-1">
+            {["All Items", "HSC Records", "NID / Passport", "Signature", "Others"].map((item, i) => (
+              <button key={i} className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all ${i === 0 ? 'bg-indigo-600/10 text-indigo-400 font-bold' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
-        <button onClick={() => signOut(auth)} className="btn btn-outline btn-error btn-sm rounded-xl">Logout</button>
+        
+        <div className="mt-6 p-4 bg-white/5 rounded-2xl border border-white/5">
+           <p className="text-[10px] text-slate-500 font-bold uppercase mb-2">Storage</p>
+           <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-indigo-500 w-[5%] h-full"></div>
+           </div>
+           <p className="text-[10px] text-indigo-400 mt-2">0.02 GB / 5.0 GB</p>
+        </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-12">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-          <div>
-            <h1 className="text-3xl font-black">My Vault</h1>
-            <p className="text-slate-400">Welcome, {user.displayName}</p>
-          </div>
-          <button className="btn bg-indigo-600 hover:bg-indigo-700 border-none rounded-xl text-white px-8">
-            + Upload Document
-          </button>
-        </header>
-
-        {/* Stats Grid: Stacks on mobile, 4 columns on desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {["Photos", "Certificates", "Signatures", "Work"].map((label, idx) => (
-            <div key={idx} className="bg-white/5 border border-white/10 p-6 rounded-[2rem] hover:border-indigo-500/50 transition-all cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-4">📁</div>
-              <h4 className="font-bold">{label}</h4>
-              <p className="text-xs text-slate-500 mt-1">Managed securely</p>
-            </div>
-          ))}
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 bg-white/[0.02] border border-white/5 rounded-[3rem] flex flex-col overflow-hidden">
+        {/* Fixed Sub-Header */}
+        <div className="p-8 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
+           <h2 className="text-xl font-bold text-white tracking-tight italic">Explorer</h2>
+           <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Protocol Secured</span>
+           </div>
         </div>
 
-        {/* Table Area */}
-        <div className="bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden">
-          <div className="p-6 border-b border-white/5 font-bold">Recent Files</div>
-          <div className="overflow-x-auto">
-            <table className="table w-full">
-              <thead className="text-slate-500 uppercase text-[10px]">
-                <tr>
-                  <th className="bg-transparent px-6">Name</th>
-                  <th className="bg-transparent hidden md:table-cell">Date</th>
-                  <th className="bg-transparent text-right px-6">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-white/5 hover:bg-white/[0.01]">
-                  <td className="px-6 py-4 flex items-center gap-3">
-                    <span className="text-xl">📄</span> HSC_Result.pdf
-                  </td>
-                  <td className="hidden md:table-cell text-slate-500">Apr 14, 2026</td>
-                  <td className="text-right px-6">
-                    <button className="btn btn-ghost btn-sm">Download</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        {/* Scrollable File Grid */}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          {files.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/5">
+                <span className="text-4xl opacity-50 grayscale">📂</span>
+              </div>
+              <h3 className="text-xl font-black text-white">No Records</h3>
+              <p className="text-sm text-slate-500 max-w-xs mt-2">
+                Your secure vault is empty. Upload your first document to initialize the storage.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {/* File cards will map here */}
+            </div>
+          )}
         </div>
       </main>
     </div>

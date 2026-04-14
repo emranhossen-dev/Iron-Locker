@@ -1,2 +1,23 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+:root {
+  font-family: 'Inter', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #020617;
+}
+
+/* Slim Indigo Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #6366f1;
+  border-radius: 10px;
+}

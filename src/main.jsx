@@ -6,6 +6,10 @@ import "./index.css";
 import Main from "./layouts/Main";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import HowToUse from "./pages/HowToUse"; // নতুন পেজ ইমপোর্ট করুন
+import PrivateRoutes from "./routes/PrivateRoutes";
 
 const router = createBrowserRouter([
   {
@@ -17,8 +21,24 @@ const router = createBrowserRouter([
         element: <Landing />,
       },
       {
+        path: "how-to-use",
+        element: <HowToUse />,
+      },
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "register",
+        element: <Register />,
+      },
+      {
         path: "dashboard",
-        element: <Dashboard />,
+        element: (
+          <PrivateRoutes>
+            <Dashboard />
+          </PrivateRoutes>
+        ),
       },
     ],
   },
