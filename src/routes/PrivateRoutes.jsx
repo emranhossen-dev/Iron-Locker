@@ -18,6 +18,7 @@ const PrivateRoutes = ({ children }) => {
     return children;
   }
 
+  // Save the current location so we can redirect back after login
   return <Navigate to="/login" state={{ from: location }} replace />;
 };
 

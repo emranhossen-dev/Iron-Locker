@@ -1,23 +1,110 @@
-import React from "react";
-import { Link } from "react-router";
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router";
+import { 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider 
+} from "firebase/auth";
+import auth from "../firebase.init";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Logic to send user back to their intended page (e.g., Dashboard)
+  const from = location.state?.from?.pathname || "/dashboard";
+
+  // Email/Password Login
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError("Authorization failed. Check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google Login
+  const handleGoogle = () => {
+    setError("");
+    signInWithPopup(auth, new GoogleAuthProvider())
+      .then(() => navigate(from, { replace: true }))
+      .catch((err) => setError(err.message));
+  };
+
   return (
-    <div className="screen-height-minus-nav flex items-center justify-center bg-[#020617] p-6">
-      <div className="w-full max-w-4xl h-[500px] grid md:grid-cols-2 bg-slate-900 rounded-[3rem] border border-white/10 shadow-3xl overflow-hidden">
-        <div className="hidden md:flex flex-col justify-center p-12 bg-indigo-600/10 border-r border-white/5">
-          <h2 className="text-4xl font-black italic text-white leading-tight">Access Your<br/><span className="text-indigo-500">Secure Vault.</span></h2>
-          <p className="text-slate-500 text-sm mt-4">Welcome back to the IronLocker Protocol.</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#020617] p-6 font-['Hind_Siliguri']">
+      <div className="w-full max-w-4xl min-h-[450px] grid md:grid-cols-2 bg-slate-900 rounded-[2.5rem] border border-white/10 shadow-3xl overflow-hidden">
+        
+        {/* Left Section: Visual Branding */}
+        <div className="hidden md:flex flex-col justify-center p-12 bg-indigo-600/5 border-r border-white/5 relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 blur-3xl rounded-full -mr-10 -mt-10"></div>
+          <h2 className="text-3xl font-black italic text-white leading-tight relative z-10">
+            Access Your<br/><span className="text-indigo-500">Secure Vault.</span>
+          </h2>
+          <p className="text-slate-500 text-xs mt-3 italic font-medium relative z-10">
+            Authentication Required for IronLocker Protocol.
+          </p>
+          <div className="mt-8 px-4 py-2 bg-white/5 border border-white/5 rounded-lg w-fit">
+            <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Security: AES-256</span>
+          </div>
         </div>
-        <div className="p-10 flex flex-col justify-center">
-          <h3 className="text-2xl font-bold text-white mb-6">Sign In</h3>
-          <form className="space-y-4">
-            <input type="email" placeholder="Email Address" className="input input-bordered w-full bg-white/5 border-white/10 h-14 rounded-2xl text-white" />
-            <input type="password" placeholder="Password" className="input input-bordered w-full bg-white/5 border-white/10 h-14 rounded-2xl text-white" />
-            <button className="btn btn-primary w-full h-14 rounded-2xl font-bold shadow-lg shadow-indigo-600/20">Login</button>
+
+        {/* Right Section: Form Inputs */}
+        <div className="p-8 md:p-12 flex flex-col justify-center">
+          <h3 className="text-xl font-bold text-white mb-6 uppercase tracking-tighter">Sign In</h3>
+          
+          {error && (
+            <p className="text-red-500 text-[10px] bg-red-500/10 p-2.5 rounded-lg mb-5 text-center border border-red-500/10 font-bold">
+              {error}
+            </p>
+          )}
+
+          <form onSubmit={handleEmailLogin} className="space-y-3">
+            <input 
+              name="email" 
+              type="email" 
+              placeholder="Email Address" 
+              required 
+              className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white text-sm focus:border-indigo-500 outline-none transition-all" 
+            />
+            <input 
+              name="password" 
+              type="password" 
+              placeholder="Password" 
+              required 
+              className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white text-sm focus:border-indigo-500 outline-none transition-all" 
+            />
+            <button 
+              type="submit"
+              disabled={loading} 
+              className="btn btn-primary w-full h-12 rounded-xl font-black uppercase text-xs tracking-widest border-none shadow-lg shadow-indigo-600/10 mt-2"
+            >
+              {loading ? <span className="loading loading-spinner loading-xs"></span> : "Authorize Access"}
+            </button>
           </form>
-          <p className="mt-6 text-center text-xs text-slate-500">
-            Don't have a vault? <Link to="/register" className="text-indigo-400 font-bold hover:underline">Register Here</Link>
+
+          <button 
+            onClick={handleGoogle} 
+            type="button"
+            className="btn btn-outline w-full h-12 rounded-xl gap-3 border-white/10 text-white hover:bg-white/5 mt-3 transition-all"
+          >
+            <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-4" alt="Google Icon" />
+            <span className="font-bold text-xs uppercase tracking-widest">Google Access</span>
+          </button>
+
+          <p className="mt-8 text-center text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+            No vault? <Link to="/register" className="text-indigo-400 hover:underline ml-1">Create One</Link>
           </p>
         </div>
       </div>
