@@ -90,7 +90,7 @@ const Login = () => {
               disabled={loading} 
               className="btn btn-primary w-full h-12 rounded-xl font-black uppercase text-xs tracking-widest border-none shadow-lg shadow-indigo-600/10 mt-2"
             >
-              {loading ? <span className="loading loading-spinner loading-xs"></span> : "Authorize Access"}
+              {loading ? <span className="loading loading-spinner loading-xs"></span> : "Login"}
             </button>
           </form>
 
@@ -99,12 +99,12 @@ const Login = () => {
             type="button"
             className="btn btn-outline w-full h-12 rounded-xl gap-3 border-white/10 text-white hover:bg-white/5 mt-3 transition-all"
           >
-            <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-4" alt="Google Icon" />
-            <span className="font-bold text-xs uppercase tracking-widest">Google Access</span>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png" className="w-4" alt="Google Icon" />
+            <span className="font-bold text-xs uppercase tracking-widest">Sign In With Google</span>
           </button>
 
           <p className="mt-8 text-center text-[10px] text-slate-500 font-bold uppercase tracking-wide">
-            No vault? <Link to="/register" className="text-indigo-400 hover:underline ml-1">Create One</Link>
+            Dont Have an Account? <Link to="/register" className="text-indigo-400 hover:underline ml-1">Sign Up</Link>
           </p>
         </div>
       </div>

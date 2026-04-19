@@ -88,7 +88,7 @@ const Register = () => {
             disabled={loading} 
             className="btn btn-primary w-full h-12 rounded-xl font-black uppercase text-xs tracking-widest mt-2 border-none"
           >
-            {loading ? <span className="loading loading-spinner loading-xs"></span> : "Initialize Account"}
+            {loading ? <span className="loading loading-spinner loading-xs"></span> : "Create Account"}
           </button>
         </form>
 
@@ -97,12 +97,12 @@ const Register = () => {
           type="button"
           className="btn btn-outline w-full h-12 rounded-xl gap-3 border-white/10 text-white hover:bg-white/5 mt-3 transition-all"
         >
-          <img src="https://www.svgrepo.com/show/355037/google.svg" className="w-4" alt="Google Icon" />
-          <span className="font-bold text-xs uppercase tracking-widest">Google Access</span>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Google_Favicon_2025.svg/250px-Google_Favicon_2025.svg.png" className="w-4" alt="Google Icon" />
+          <span className="font-bold text-xs uppercase tracking-widest">Sign Up With Google</span>
         </button>
         
         <p className="mt-6 text-center text-[10px] text-slate-500 font-bold">
-          ALREADY A USER? <Link to="/login" className="text-indigo-400 hover:underline ml-1">ACCESS HERE</Link>
+          Already Have an Account? <Link to="/login" className="text-indigo-400 hover:underline ml-1">Login</Link>
         </p>
       </div>
     </div>

@@ -1,21 +1,25 @@
 import React from "react";
 import { Outlet, useLocation } from "react-router";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const Main = () => {
   const location = useLocation();
   
-  // Check if we are in the dashboard area
+  // Hide Nav and Footer for any route starting with /dashboard
   const isDashboard = location.pathname.startsWith("/dashboard");
 
   return (
-    <div className="bg-[#020617] min-h-screen font-['Hind_Siliguri']">
-      {/* Show the main Marketing Navbar only if NOT on dashboard */}
+    <div className="min-h-screen flex flex-col bg-[#020617]">
+      {/* Hide Navbar in Dashboard */}
       {!isDashboard && <Navbar />}
-      
-      <main>
+
+      <main className="flex-grow">
         <Outlet />
       </main>
+
+      {/* Hide Footer in Dashboard */}
+      {!isDashboard && <Footer />}
     </div>
   );
 };

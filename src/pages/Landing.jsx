@@ -116,10 +116,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      <footer className="py-12 text-center border-t border-white/5 opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.5em]">IronLocker © 2026 • Secure & Local</p>
-      </footer>
-
     </div>
   );
 };

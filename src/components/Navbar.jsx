@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
   faBars, faTimes, faArrowRightFromBracket, 
-  faTableCells, faUser, faShieldHalved, faCircleInfo,
+  faTableCells, faShieldHalved, faCircleInfo,
   faLightbulb, faGraduationCap, faEnvelope 
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -44,8 +44,15 @@ const Navbar = () => {
             <button onClick={() => setIsMenuOpen(true)} className="lg:hidden text-slate-400 hover:text-white">
               <FontAwesomeIcon icon={faBars} size="lg" />
             </button>
-            <Link to="/" className="text-xl font-black italic text-white tracking-tighter uppercase">
-              IRON<span className="text-indigo-500">LOCKER.</span>
+            
+            {/* Added Logo Structure Here */}
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
+                <FontAwesomeIcon icon={faShieldHalved} size="sm" />
+              </div>
+              <span className="text-xl font-black italic tracking-tighter text-white uppercase">
+                Iron<span className="text-indigo-500">Locker</span>
+              </span>
             </Link>
           </div>
 
@@ -61,14 +68,14 @@ const Navbar = () => {
           {/* RIGHT: AUTH STATE */}
           <div className="flex items-center gap-4">
             {!user ? (
-              <Link to="/register" className="btn btn-sm h-11 bg-indigo-600 border-none text-white px-6 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-indigo-500/20">
+              <Link to="/register" className="btn btn-sm h-11 bg-indigo-600 border-none text-white px-6 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-indigo-500/20 transition-transform active:scale-95">
                 Join Free
               </Link>
             ) : (
               <div className="dropdown dropdown-end">
                 <div tabIndex={0} role="button" className="avatar cursor-pointer">
                   <div className="w-10 rounded-2xl ring-2 ring-indigo-500/30 ring-offset-2 ring-offset-[#020617]">
-                    <img src={user.photoURL || "https://ui-avatars.com/api/?name=User"} alt="profile" />
+                    <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=4f46e5&color=fff`} alt="profile" />
                   </div>
                 </div>
                 <ul tabIndex={0} className="dropdown-content mt-4 p-2 shadow-2xl bg-slate-900 border border-white/10 rounded-2xl w-56 text-white overflow-hidden">
@@ -90,8 +97,14 @@ const Navbar = () => {
         <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setIsMenuOpen(false)} />
         <aside className={`absolute inset-y-0 left-0 w-72 bg-[#020617] border-r border-white/10 p-8 flex flex-col transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="flex justify-between items-center mb-12">
-            <span className="text-lg font-black italic uppercase text-white">Menu</span>
-            <button onClick={() => setIsMenuOpen(false)} className="text-slate-500"><FontAwesomeIcon icon={faTimes} size="lg" /></button>
+            {/* Logo in Mobile Menu as well */}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-white">
+                <FontAwesomeIcon icon={faShieldHalved} size="xs" />
+              </div>
+              <span className="text-sm font-black italic uppercase text-white">IronLocker</span>
+            </div>
+            <button onClick={() => setIsMenuOpen(false)} className="text-slate-500 hover:text-white transition-colors"><FontAwesomeIcon icon={faTimes} size="lg" /></button>
           </div>
           <nav className="flex-1 space-y-4">
             {navLinks.map((link) => (
