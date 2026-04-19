@@ -5,23 +5,28 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { 
-  faBars, faRightFromBracket, faTimes, 
-  faShieldHalved, faFolderOpen, faPlus, faChartPie, faCloudArrowUp, faEye, faArrowLeft, faDownload
+  faBars, faRightFromBracket, faTimes, faHouse,
+  faShieldHalved, faFolderOpen, faPlus, faCloudArrowUp, faEye, faArrowLeft, faDownload, faChevronLeft, faChevronRight
 } from "@fortawesome/free-solid-svg-icons";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   
+  // --- UI STATES ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [files, setFiles] = useState([]); 
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
+  const [activeFolder, setActiveFolder] = useState(null); // Changed from viewMode to manage folders directly
 
-  // --- FOLDER SYSTEM STATES ---
-  const [activeFolder, setActiveFolder] = useState(null); 
+  // --- DATA STATES ---
+  const [files, setFiles] = useState([]);
+  const [fetching, setFetching] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // --- PAGINATION STATES ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const categories = ["Academic Certificate", "Personal Photo", "Documents", "Professional Data", "Others"];
 
   // --- FETCH LOGIC ---
@@ -29,20 +34,15 @@ const Dashboard = () => {
     if (!user?.email) return;
     try {
       setFetching(true);
-      // If a category is selected, we call the filtered route, otherwise we fetch all (or hide grid)
+      // If a category is selected, fetch by category. Otherwise, fetch all.
       const url = category 
         ? `${API_BASE_URL}/api/files/${user.email.toLowerCase()}/${category}`
         : `${API_BASE_URL}/api/files/user/${user.email.toLowerCase()}`;
       
       const res = await axios.get(url);
-      
-      if (Array.isArray(res.data)) {
-        setFiles(res.data);
-      } else {
-        setFiles([]);
-      }
+      setFiles(Array.isArray(res.data) ? res.data : []);
+      setCurrentPage(1); // Reset to first page whenever we switch views
     } catch (err) {
-      console.error("Fetch error:", err);
       setFiles([]);
     } finally {
       setFetching(false);
@@ -50,15 +50,20 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // Only auto-fetch if we are inside a folder
-    if (activeFolder) {
-      fetchFiles(activeFolder);
-    }
+    fetchFiles(activeFolder);
   }, [user?.email, activeFolder]);
 
-  const handleLogout = () => signOut(auth);
+  // --- PAGINATION CALCULATION ---
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentFiles = files.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(files.length / itemsPerPage);
 
-  // --- DOWNLOAD LOGIC ---
+  const handleLogout = () => signOut(auth);
+  
+  // Standard window redirect for "Go to Home"
+  const goToHome = () => window.location.href = "/";
+
   const downloadImage = async (url, title) => {
     const res = await fetch(url);
     const blob = await res.blob();
@@ -68,14 +73,12 @@ const Dashboard = () => {
     link.click();
   };
 
-  // --- UPLOAD LOGIC ---
   const handleUpload = async (e) => {
     e.preventDefault();
     const form = e.target;
     const title = form.title.value;
     const category = form.category.value;
     const imageFile = form.image.files[0];
-
     if (!imageFile) return alert("Select a file.");
     setLoading(true);
 
@@ -87,22 +90,15 @@ const Dashboard = () => {
 
       if (imgbbRes.data.success) {
         const fileMetadata = { 
-          title, 
-          category, 
-          imageUrl: imgbbRes.data.data.url, 
-          userEmail: user?.email.toLowerCase()
+          title, category, imageUrl: imgbbRes.data.data.url, userEmail: user?.email.toLowerCase()
         };
-        
         await axios.post(`${API_BASE_URL}/api/files/add`, fileMetadata);
-        
         setShowUploadModal(false);
         form.reset();
-        // If we uploaded to the current folder, refresh it
-        if (activeFolder === category) fetchFiles(category);
-        else setActiveFolder(category); // Or jump to that folder
+        fetchFiles(activeFolder);
       }
     } catch (error) {
-      alert("Locker Sync Failed.");
+      alert("Sync Failed.");
     } finally {
       setLoading(false);
     }
@@ -111,25 +107,49 @@ const Dashboard = () => {
   return (
     <div className="flex h-screen bg-[#020617] overflow-hidden text-slate-300 font-['Hind_Siliguri']">
       
-      {/* SIDEBAR (UNTOCUHED) */}
-      <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-[#020617] border-r border-white/5 p-8 transition-transform duration-300 lg:translate-x-0 lg:static ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      {/* SIDEBAR (RESTRUCTURED) */}
+      <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-[#020617] border-r border-white/5 p-8 transition-transform duration-300 lg:translate-x-0 lg:static flex flex-col ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex justify-between items-center mb-12">
           <span className="text-xl font-black italic uppercase tracking-tighter text-white">IRON<span className="text-indigo-500">LOCKER.</span></span>
           <button className="lg:hidden text-slate-500" onClick={() => setIsSidebarOpen(false)}><FontAwesomeIcon icon={faTimes} size="lg"/></button>
         </div>
-        <nav className="space-y-2">
-          <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Storage</p>
-          <button onClick={() => setActiveFolder(null)} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold text-sm text-left transition-all ${!activeFolder ? "bg-indigo-600/10 text-indigo-400" : "hover:bg-white/5"}`}>
-            <FontAwesomeIcon icon={faShieldHalved} /> My Vault
+        
+        <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar">
+          <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Navigation</p>
+          
+          {/* Dashboard / All Assets */}
+          <button 
+            onClick={() => { setActiveFolder(null); setIsSidebarOpen(false); }}
+            className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold text-sm text-left transition-all ${!activeFolder ? "bg-indigo-600/10 text-indigo-400" : "hover:bg-white/5"}`}
+          >
+            <FontAwesomeIcon icon={faShieldHalved} /> Dashboard
           </button>
-          <button className="w-full flex items-center gap-4 px-4 py-3 hover:bg-white/5 hover:text-white rounded-2xl font-bold text-sm transition-all text-left"><FontAwesomeIcon icon={faChartPie} /> Analytics</button>
-          <button className="w-full flex items-center gap-4 px-4 py-3 hover:bg-white/5 hover:text-white rounded-2xl font-bold text-sm transition-all text-left"><FontAwesomeIcon icon={faFolderOpen} /> Folders</button>
+
+          <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mt-8 mb-4">Folders</p>
+          
+          {/* Dynamic Folder List */}
+          {categories.map((cat) => (
+            <button 
+              key={cat}
+              onClick={() => { setActiveFolder(cat); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold text-sm text-left transition-all ${activeFolder === cat ? "bg-indigo-600/10 text-indigo-400" : "hover:bg-white/5"}`}
+            >
+              <FontAwesomeIcon icon={faFolderOpen} /> {cat}
+            </button>
+          ))}
         </nav>
+
+        {/* LOGOUT AT THE BOTTOM */}
+        <div className="pt-6 mt-6 border-t border-white/5">
+          <button onClick={handleLogout} className="w-full px-5 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl transition-all font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3">
+            Logout Securely <FontAwesomeIcon icon={faRightFromBracket} />
+          </button>
+        </div>
       </aside>
 
       <div className="flex-1 flex flex-col relative min-w-0">
         
-        {/* HEADER (UNTOUCHED) */}
+        {/* HEADER (GO TO HOME INSTEAD OF LOGOUT) */}
         <header className="h-24 flex items-center justify-between px-6 md:px-10 border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl sticky top-0 z-[90]">
           <div className="flex items-center gap-5">
             <div className="relative cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
@@ -145,8 +165,13 @@ const Dashboard = () => {
               <span className="text-white font-bold">{user?.displayName?.split(" ")[0] || "User"}</span>
             </div>
           </div>
-          <button onClick={handleLogout} className="px-5 py-2.5 bg-white/5 hover:bg-red-500/10 hover:text-red-500 rounded-xl border border-white/5 transition-all font-bold text-[10px] uppercase tracking-widest group flex items-center gap-2">
-            Logout <FontAwesomeIcon icon={faRightFromBracket} />
+
+          {/* HOME BUTTON */}
+          <button 
+            onClick={goToHome} 
+            className="px-6 py-3 bg-white/5 hover:bg-indigo-600 hover:text-white rounded-xl border border-white/10 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
+          >
+            <FontAwesomeIcon icon={faHouse} /> Go to Home
           </button>
         </header>
 
@@ -156,79 +181,65 @@ const Dashboard = () => {
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                 <div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">
-                      {activeFolder ? activeFolder : "My Locker"}
+                      {activeFolder || "Master Vault"}
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">Status: <span className={fetching ? "text-yellow-500" : "text-green-500"}>{fetching ? "Decrypting..." : "Online"}</span></p>
+                    <p className="text-slate-500 text-sm mt-1">
+                      {activeFolder ? `Filtered by ${activeFolder}` : `Showing all ${files.length} assets`}
+                    </p>
                 </div>
                 <button  
                   onClick={() => setShowUploadModal(true)}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 h-14 rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-[11px] tracking-widest transition-all shadow-xl shadow-indigo-600/20"
                 >
-                  <FontAwesomeIcon icon={faPlus} /> Upload File
+                  <FontAwesomeIcon icon={faPlus} /> New Asset
                 </button>
              </div>
              
-             {/* --- DYNAMIC CONTENT AREA --- */}
-             {!activeFolder ? (
-               /* FOLDER GRID: Matches your visual style */
-               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                 {categories.map((cat) => (
-                   <div 
-                    key={cat} 
-                    onClick={() => setActiveFolder(cat)}
-                    className="group bg-slate-900/40 border border-white/5 p-8 rounded-[2.5rem] flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500/50 transition-all"
-                   >
-                     <FontAwesomeIcon icon={faFolderOpen} className="text-4xl mb-4 text-indigo-500/40 group-hover:text-indigo-500 transition-all" />
-                     <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">{cat}</span>
-                   </div>
-                 ))}
-               </div>
-             ) : (
-               /* YOUR ORIGINAL FILE GRID */
-               <>
-                 <button onClick={() => setActiveFolder(null)} className="mb-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all">
-                   <FontAwesomeIcon icon={faArrowLeft} /> Back to Vault
-                 </button>
-
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {fetching ? (
-                      [1, 2, 3, 4].map(n => <div key={n} className="h-64 bg-white/5 animate-pulse rounded-[2.5rem] border border-white/5"></div>)
-                    ) : files.length > 0 ? (
-                      files.map((file) => (
-                        <div key={file._id} className="group relative bg-slate-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-indigo-500/50 transition-all duration-500 shadow-2xl">
-                          <div className="h-48 overflow-hidden relative">
-                            <img src={file.imageUrl} alt={file.title} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-700" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
-                          </div>
-                          <div className="p-6">
-                            <h3 className="text-sm font-bold text-white truncate uppercase tracking-tight mb-1">{file.title}</h3>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Secure Asset</p>
-                          </div>
-                          {/* OVERLAY WITH VIEW AND DOWNLOAD */}
-                          <div className="absolute inset-0 bg-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-3 items-center justify-center backdrop-blur-[2px]">
-                               <a href={file.imageUrl} target="_blank" rel="noreferrer" className="w-32 text-center bg-white text-black py-3 rounded-xl text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-transform"><FontAwesomeIcon icon={faEye} /> View</a>
-                               <button onClick={() => downloadImage(file.imageUrl, file.title)} className="w-32 bg-slate-900 text-white py-3 rounded-xl text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-transform"><FontAwesomeIcon icon={faDownload} /> Download</button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="col-span-full h-64 bg-white/5 border border-white/5 border-dashed rounded-[3rem] flex flex-col items-center justify-center gap-4 text-slate-600">
-                        <FontAwesomeIcon icon={faShieldHalved} size="3xl" className="opacity-10" />
-                        <p className="font-bold italic uppercase tracking-widest text-[10px]">No Files in this folder</p>
+             {/* FILE GRID */}
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {fetching ? (
+                  [1, 2, 3, 4].map(n => <div key={n} className="h-64 bg-white/5 animate-pulse rounded-[2.5rem] border border-white/5"></div>)
+                ) : currentFiles.length > 0 ? (
+                  currentFiles.map((file) => (
+                    <div key={file._id} className="group relative bg-slate-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-indigo-500/50 transition-all duration-500 shadow-2xl">
+                      <div className="h-48 overflow-hidden relative">
+                        <img src={file.imageUrl} alt={file.title} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-700" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                       </div>
-                    )}
-                 </div>
-               </>
+                      <div className="p-6">
+                        <h3 className="text-sm font-bold text-white truncate uppercase tracking-tight mb-1">{file.title}</h3>
+                        <span className="text-[8px] font-black px-2 py-0.5 bg-indigo-600/20 text-indigo-400 rounded-md uppercase tracking-widest">{file.category}</span>
+                      </div>
+                      <div className="absolute inset-0 bg-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-3 items-center justify-center backdrop-blur-[2px]">
+                           <a href={file.imageUrl} target="_blank" rel="noreferrer" className="w-32 text-center bg-white text-black py-3 rounded-xl text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-transform"><FontAwesomeIcon icon={faEye} /> View</a>
+                           <button onClick={() => downloadImage(file.imageUrl, file.title)} className="w-32 bg-slate-900 text-white py-3 rounded-xl text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-transform"><FontAwesomeIcon icon={faDownload} /> Download</button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full h-64 bg-white/5 border border-white/5 border-dashed rounded-[3rem] flex flex-col items-center justify-center gap-4 text-slate-600">
+                    <FontAwesomeIcon icon={faShieldHalved} size="3xl" className="opacity-10" />
+                    <p className="font-bold italic uppercase tracking-widest text-[10px]">No assets found</p>
+                  </div>
+                )}
+             </div>
+
+             {/* PAGINATION CONTROLS */}
+             {!fetching && files.length > itemsPerPage && (
+               <div className="flex items-center justify-center gap-4 mt-12">
+                 <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-600 transition-all disabled:opacity-20"><FontAwesomeIcon icon={faChevronLeft} /></button>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Page {currentPage} of {totalPages}</span>
+                 <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)} className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-600 transition-all disabled:opacity-20"><FontAwesomeIcon icon={faChevronRight} /></button>
+               </div>
              )}
           </div>
         </main>
 
-        {/* UPLOAD MODAL (UNTOUCHED UI - UPDATED OPTIONS) */}
+        {/* MODAL */}
         {showUploadModal && (
           <div className="fixed inset-0 bg-[#020617]/90 backdrop-blur-md z-[110] flex items-center justify-center p-6">
             <div className="bg-slate-900 w-full max-w-lg p-10 rounded-[3rem] border border-white/10 shadow-2xl relative">
               <button onClick={() => setShowUploadModal(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-all"><FontAwesomeIcon icon={faTimes} size="lg" /></button>
-              
               <div className="flex items-center gap-4 mb-8">
                   <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-500"><FontAwesomeIcon icon={faCloudArrowUp} size="xl" /></div>
                   <div>
@@ -236,10 +247,9 @@ const Dashboard = () => {
                     <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-1">Initialize Upload</p>
                   </div>
               </div>
-              
               <form onSubmit={handleUpload} className="space-y-6">
-                <input name="title" type="text" placeholder="Title" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 h-14 text-sm text-white outline-none" />
-                <select name="category" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 h-14 text-sm text-slate-400 outline-none">
+                <input name="title" type="text" placeholder="Title" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 h-14 text-sm text-white outline-none focus:border-indigo-500" />
+                <select name="category" required className="w-full bg-[#020617] border border-white/10 rounded-2xl px-5 h-14 text-sm text-slate-400 outline-none">
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <input name="image" type="file" accept="image/*" required className="block w-full text-[10px] text-slate-500 file:mr-4 file:py-4 file:px-6 file:rounded-2xl file:border-0 file:font-black file:uppercase file:bg-indigo-600/10 file:text-indigo-400 bg-white/5 rounded-2xl border border-white/10 h-14" />
