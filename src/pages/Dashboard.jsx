@@ -11,23 +11,32 @@ import {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const API_BASE_URL = import.meta.env.VITE_API_URL;
+  
+  // Use a fallback for the API URL to prevent undefined errors
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState([]); // Default is empty array
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  // --- FETCH FROM LIVE BACKEND ---
+  // --- FETCH LOGIC WITH ERROR HANDLING ---
   const fetchFiles = async () => {
     if (!user?.email) return;
     try {
       setFetching(true);
-      const res = await axios.get(`${API_BASE_URL}/api/files/user/${user.email}`);
-      setFiles(res.data);
+      const res = await axios.get(`${API_BASE_URL}/api/files/user/${user.email.toLowerCase()}`);
+      
+      // Safety check: ensure the response is actually an array
+      if (Array.isArray(res.data)) {
+        setFiles(res.data);
+      } else {
+        setFiles([]); // Fallback to empty array if server sends something weird
+      }
     } catch (err) {
       console.error("Fetch error:", err);
+      setFiles([]); // Fallback to empty array on network failure
     } finally {
       setFetching(false);
     }
@@ -39,7 +48,7 @@ const Dashboard = () => {
 
   const handleLogout = () => signOut(auth);
 
-  // --- UPLOAD TO IMGBB & LIVE BACKEND ---
+  // --- UPLOAD LOGIC ---
   const handleUpload = async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -61,7 +70,7 @@ const Dashboard = () => {
           title, 
           category, 
           imageUrl: imgbbRes.data.data.url, 
-          userEmail: user?.email 
+          userEmail: user?.email.toLowerCase() // Consistency check
         };
         
         const serverRes = await axios.post(`${API_BASE_URL}/api/files/add`, fileMetadata);
@@ -73,7 +82,7 @@ const Dashboard = () => {
         }
       }
     } catch (error) {
-      alert("Locker Sync Failed. Check if the server is live.");
+      alert("Locker Sync Failed. Check if the server is live and CORS is allowed.");
     } finally {
       setLoading(false);
     }
@@ -123,11 +132,10 @@ const Dashboard = () => {
         <main className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
           <div className="max-w-7xl mx-auto">
              
-             {/* MY LOCKER HEADER */}
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                 <div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">My Locker</h1>
-                    <p className="text-slate-500 text-sm mt-1">Sync status: <span className="text-green-500 font-bold">Online</span></p>
+                    <p className="text-slate-500 text-sm mt-1">Status: <span className={fetching ? "text-yellow-500" : "text-green-500"}>{fetching ? "Decrypting..." : "Online"}</span></p>
                 </div>
                 <button 
                   onClick={() => setShowUploadModal(true)}
@@ -137,11 +145,11 @@ const Dashboard = () => {
                 </button>
              </div>
              
-             {/* FILE GRID */}
+             {/* PROTECTED GRID: Uses Array.isArray to prevent crash */}
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {fetching ? (
                   [1, 2, 3, 4].map(n => <div key={n} className="h-64 bg-white/5 animate-pulse rounded-[2.5rem] border border-white/5"></div>)
-                ) : files.length > 0 ? (
+                ) : Array.isArray(files) && files.length > 0 ? (
                   files.map((file) => (
                     <div key={file._id} className="group relative bg-slate-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-indigo-500/50 transition-all duration-500 shadow-2xl">
                       <div className="absolute top-5 left-5 z-10">
@@ -163,44 +171,35 @@ const Dashboard = () => {
                 ) : (
                   <div className="col-span-full h-64 bg-white/5 border border-white/5 border-dashed rounded-[3rem] flex flex-col items-center justify-center gap-4 text-slate-600">
                     <FontAwesomeIcon icon={faShieldHalved} size="3xl" className="opacity-10" />
-                    <p className="font-bold italic uppercase tracking-widest text-[10px]">Vault instance is empty</p>
+                    <p className="font-bold italic uppercase tracking-widest text-[10px]">No Secure Assets Found</p>
                   </div>
                 )}
              </div>
           </div>
         </main>
 
-        {/* MODAL */}
+        {/* UPLOAD MODAL */}
         {showUploadModal && (
           <div className="fixed inset-0 bg-[#020617]/90 backdrop-blur-md z-[110] flex items-center justify-center p-6">
             <div className="bg-slate-900 w-full max-w-lg p-10 rounded-[3rem] border border-white/10 shadow-2xl relative">
-              <button onClick={() => setShowUploadModal(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white"><FontAwesomeIcon icon={faTimes} size="lg" /></button>
+              <button onClick={() => setShowUploadModal(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-all"><FontAwesomeIcon icon={faTimes} size="lg" /></button>
               
               <div className="flex items-center gap-4 mb-8">
                   <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-500"><FontAwesomeIcon icon={faCloudArrowUp} size="xl" /></div>
                   <div>
-                    <h2 className="text-xl font-black text-white uppercase italic">Secure Sync</h2>
+                    <h2 className="text-xl font-black text-white uppercase italic leading-none">Secure Sync</h2>
                     <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-1">Initialize Upload</p>
                   </div>
               </div>
               
               <form onSubmit={handleUpload} className="space-y-6">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-indigo-500/70 ml-2 mb-1 block tracking-widest">Title</label>
-                  <input name="title" type="text" placeholder="e.g. PASSPORT_MAIN" required className="w-full bg-white/5 border border-white/10 focus:border-indigo-500 rounded-2xl px-5 h-14 text-sm text-white outline-none" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-indigo-500/70 ml-2 mb-1 block tracking-widest">Classification</label>
-                  <select name="category" required className="w-full bg-white/5 border border-white/10 focus:border-indigo-500 rounded-2xl px-5 h-14 text-sm text-slate-400 outline-none">
-                    <option value="NID">NID / Passport</option>
-                    <option value="Academic">Academic Certificate</option>
-                    <option value="Personal">Personal Data</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-indigo-500/70 ml-2 mb-1 block tracking-widest">File</label>
-                  <input name="image" type="file" accept="image/*" required className="block w-full text-[10px] text-slate-500 file:mr-4 file:py-4 file:px-6 file:rounded-2xl file:border-0 file:font-black file:uppercase file:bg-indigo-600/10 file:text-indigo-400 bg-white/5 rounded-2xl border border-white/10 h-14" />
-                </div>
+                <input name="title" type="text" placeholder="Title" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 h-14 text-sm text-white outline-none" />
+                <select name="category" required className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 h-14 text-sm text-slate-400 outline-none">
+                  <option value="NID">NID / Passport</option>
+                  <option value="Academic">Academic</option>
+                  <option value="Personal">Personal</option>
+                </select>
+                <input name="image" type="file" accept="image/*" required className="block w-full text-[10px] text-slate-500 file:mr-4 file:py-4 file:px-6 file:rounded-2xl file:border-0 file:font-black file:uppercase file:bg-indigo-600/10 file:text-indigo-400 bg-white/5 rounded-2xl border border-white/10 h-14" />
                 <button disabled={loading} className="w-full h-16 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-800 text-white rounded-2xl font-black uppercase text-[11px] tracking-[0.3em] transition-all">
                   {loading ? "Encrypting..." : "Initialize Lock"}
                 </button>
