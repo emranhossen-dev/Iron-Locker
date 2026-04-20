@@ -6,6 +6,7 @@ import {
   faTableCellsLarge,
   faFolderOpen,
   faRightFromBracket,
+  faUser, // Added for Profile icon
 } from "@fortawesome/free-solid-svg-icons";
 
 const Sidebar = ({ 
@@ -17,7 +18,8 @@ const Sidebar = ({
   categories, 
   selectFolder, 
   activeFolder, 
-  handleLogout 
+  handleLogout,
+  setShowProfileModal // New prop passed from Dashboard
 }) => {
   return (
     <aside
@@ -42,7 +44,7 @@ const Sidebar = ({
           Main Menu
         </p>
         <button
-          onClick={resetDashboard}
+          onClick={() => { resetDashboard(); setIsSidebarOpen(false); }}
           className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold text-sm text-left transition-all ${
             viewMode === "all" && !activeFolder
               ? "bg-indigo-600/10 text-indigo-400"
@@ -53,7 +55,7 @@ const Sidebar = ({
         </button>
 
         <button
-          onClick={openFolderGrid}
+          onClick={() => { openFolderGrid(); setIsSidebarOpen(false); }}
           className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold text-sm text-left transition-all ${
             viewMode === "grid" ? "bg-indigo-600/10 text-indigo-400" : "hover:bg-white/5"
           }`}
@@ -67,7 +69,7 @@ const Sidebar = ({
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => selectFolder(cat)}
+            onClick={() => { selectFolder(cat); setIsSidebarOpen(false); }}
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl font-bold text-sm text-left transition-all ${
               activeFolder === cat ? "bg-indigo-600/10 text-indigo-400" : "hover:bg-white/5"
             }`}
@@ -77,9 +79,17 @@ const Sidebar = ({
         ))}
       </nav>
 
+      {/* --- ADDED UPDATE PROFILE SECTION --- */}
+      <button
+        onClick={() => { setShowProfileModal(true); setIsSidebarOpen(false); }}
+        className="mt-4 w-full px-5 py-4 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all border border-white/5"
+      >
+        <FontAwesomeIcon icon={faUser} className="text-indigo-500" /> Update Profile
+      </button>
+
       <button
         onClick={handleLogout}
-        className="mt-6 w-full px-5 py-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all"
+        className="mt-3 w-full px-5 py-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all"
       >
         Logout <FontAwesomeIcon icon={faRightFromBracket} />
       </button>
