@@ -54,7 +54,7 @@ const AssetDetails = ({ file, onBack, onUpdate, onDelete, categories }) => {
     }
   };
 
-  // --- 3. DELETE LOGIC ---
+  // --- 3. DELETE LOGIC logic ---
   const handleDeleteInternal = async () => {
     if (!window.confirm("WARNING: Permanent deletion. Purge this asset from the vault?")) return;
     
