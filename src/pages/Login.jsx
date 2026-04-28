@@ -6,17 +6,18 @@ import {
   GoogleAuthProvider 
 } from "firebase/auth";
 import auth from "../firebase.init";
+// Using Lucide icons for the toggle (or your preferred icon set)
+import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Toggle state
 
-  // Logic to send user back to their intended page (e.g., Dashboard)
   const from = location.state?.from?.pathname || "/dashboard";
 
-  // Email/Password Login
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -34,7 +35,6 @@ const Login = () => {
     }
   };
 
-  // Google Login
   const handleGoogle = () => {
     setError("");
     signInWithPopup(auth, new GoogleAuthProvider())
@@ -78,13 +78,25 @@ const Login = () => {
               required 
               className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white text-sm focus:border-indigo-500 outline-none transition-all" 
             />
-            <input 
-              name="password" 
-              type="password" 
-              placeholder="Password" 
-              required 
-              className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white text-sm focus:border-indigo-500 outline-none transition-all" 
-            />
+            
+            {/* Password Input Wrapper */}
+            <div className="relative">
+              <input 
+                name="password" 
+                type={showPassword ? "text" : "password"} 
+                placeholder="Password" 
+                required 
+                className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white text-sm focus:border-indigo-500 outline-none transition-all pr-12" 
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
             <button 
               type="submit"
               disabled={loading} 
