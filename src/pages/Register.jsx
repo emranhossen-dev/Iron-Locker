@@ -7,13 +7,15 @@ import {
   updateProfile 
 } from "firebase/auth";
 import auth from "../firebase.init";
+// Import Lucide icons for a clean look (or use any icon library you prefer)
+import { Eye, EyeOff } from "lucide-react";
 
 const Register = () => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // State for visibility
 
-  // Google Sign In Logic
   const handleGoogle = () => {
     setError("");
     signInWithPopup(auth, new GoogleAuthProvider())
@@ -21,7 +23,6 @@ const Register = () => {
       .catch((err) => setError(err.message));
   };
 
-  // Email/Password Sign Up Logic
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
@@ -36,7 +37,6 @@ const Register = () => {
     setLoading(true);
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      // Update the user's display name immediately
       await updateProfile(result.user, { displayName: name });
       navigate("/dashboard");
     } catch (err) {
@@ -75,13 +75,25 @@ const Register = () => {
             required 
             className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white outline-none focus:border-indigo-500 text-sm transition-all" 
           />
-          <input 
-            name="password" 
-            type="password" 
-            placeholder="Key Phrase (Password)" 
-            required 
-            className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white outline-none focus:border-indigo-500 text-sm transition-all" 
-          />
+          
+          {/* Password Container */}
+          <div className="relative">
+            <input 
+              name="password" 
+              type={showPassword ? "text" : "password"} // Dynamic type
+              placeholder="Key Phrase (Password)" 
+              required 
+              className="input input-bordered w-full bg-white/5 border-white/10 h-12 rounded-xl text-white outline-none focus:border-indigo-500 text-sm transition-all pr-12" 
+            />
+            {/* Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           
           <button 
             type="submit" 
